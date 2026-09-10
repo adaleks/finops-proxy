@@ -36,8 +36,17 @@ builds:
 # published as a release artifact.
 
 archives:
-  - formats: [tar.gz, zip]
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  # One archive per binary: finops-run is linux/darwin only, so a single
+  # combined archive would have a different binary count per platform.
+  - id: proxy
+    ids: [proxy]
+    formats: [tar.gz, zip]
+    name_template: "finops-proxy_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: finops-run
+    ids: [finops-run]
+    formats: [tar.gz, zip]
+    name_template: "finops-run_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: checksums.txt
