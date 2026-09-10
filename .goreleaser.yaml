@@ -27,7 +27,9 @@ builds:
       - -s -w -X main.version={{.Version}}
     env:
       - CGO_ENABLED=0
-    goos: [linux, darwin, windows]
+    # finops-run is Unix-only: it kills a child via process-group signaling
+    # (Setpgid / syscall.Kill), which has no Windows equivalent.
+    goos: [linux, darwin]
     goarch: [amd64, arm64]
 
 # mockserver is dev-only (built from source via the Dockerfile); it is not
