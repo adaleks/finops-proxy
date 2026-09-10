@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinOps Proxy — Dev Dashboard</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #0d1117; color: #e6edf3; padding: 24px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #8b949e; font-size: 12px; margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tile { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; }
+  .tile .label { color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .tile .value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .panel h2 { font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; font-weight: 600; }
+  .panel h2 .vel { color: #58a6ff; }
+  svg { display: block; width: 100%; height: 160px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #21262d; }
+  th { color: #8b949e; font-weight: 500; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .empty { color: #8b949e; font-size: 13px; }
+  .footer { color: #8b949e; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>FinOps Proxy</h1>
+  <p class="sub">local developer dashboard · polls /v1/metrics</p>
+
+  <div class="grid">
+    <div class="tile"><div class="label">Active</div><div class="value" id="active">0</div></div>
+    <div class="tile"><div class="label">Loop Blocks</div><div class="value" id="blocks">0</div></div>
+    <div class="tile"><div class="label">Saved</div><div class="value" id="saved">$0.0000</div></div>
+    <div class="tile"><div class="label">Avg Latency</div><div class="value" id="latency">0 µs</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Token consumption <span class="vel" id="vel"></span></h2>
+    <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+  </div>
+
+  <div class="panel">
+    <h2>Trigger history</h2>
+    <table>
+      <thead><tr><th>time</th><th>agent</th><th>model</th><th>reason</th><th>saved</th></tr></thead>
+      <tbody id="triggers"><tr><td colspan="5" class="empty">no loop triggers yet</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel footer">
+    uptime <span id="uptime">0s</span> · requests <span id="requests">0</span> · blocked agents <span id="blocked">0</span>
+  </div>
+
+<script>
+const POLL_MS = 500;
+
+function fmtUSD(micro) {
+  return "$" + ((micro || 0) / 1e6).toFixed(4);
+}
+
+function drawSparkline(series) {
+  const svg = document.getElementById("chart");
+  const W = 600, H = 160, pad = 8;
+  const pts = series || [];
+  const max = Math.max(1, ...pts.map(p => p.tokens));
+  const step = W / Math.max(1, pts.length - 1);
+  const xy = pts.map((p, i) => {
+    const x = i * step;
+    const y = H - pad - (p.tokens / max) * (H - 2 * pad);
+    return x.toFixed(1) + "," + y.toFixed(1);
+  });
+  const area = pad + "," + (H - pad) + " " + xy.join(" ") + " " + (W - pad) + "," + (H - pad);
+  const line = xy.join(" ");
+  svg.innerHTML =
+    '<polygon points="' + area + '" fill="rgba(88,166,255,0.12)"/>' +
+    '<polyline points="' + line + '" fill="none" stroke="#58a6ff" stroke-width="1.5"/>';
+}
+
+function fmtTime(sec) {
+  return new Date(sec * 1000).toLocaleTimeString();
+}
+
+function renderTriggers(list) {
+  const tb = document.getElementById("triggers");
+  if (!list || list.length === 0) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">no loop triggers yet</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(t =>
+    '<tr>' +
+    '<td class="num">' + fmtTime(t.timestamp) + '</td>' +
+    '<td>' + (t.agent_id || "—") + '</td>' +
+    '<td>' + (t.model || "—") + '</td>' +
+    '<td>' + (t.reason || "") + '</td>' +
+    '<td class="num">' + fmtUSD(t.saved_cost_micro_usd) + '</td>' +
+    '</tr>'
+  ).join("");
+}
+
+async function tick() {
+  let s;
+  try {
+    const r = await fetch("/v1/metrics");
+    if (!r.ok) return;
+    s = await r.json();
+  } catch (e) {
+    return;
+  }
+  document.getElementById("active").textContent = s.active_requests ?? 0;
+  document.getElementById("blocks").textContent = s.loop_blocks ?? 0;
+  document.getElementById("saved").textContent = fmtUSD(s.saved_cost_micro_usd);
+  document.getElementById("latency").textContent = (s.avg_latency_micro ?? 0) + " µs";
+  document.getElementById("vel").textContent = "· " + Math.round(s.token_velocity ?? 0) + " tok/s";
+  document.getElementById("requests").textContent = s.total_requests ?? 0;
+  document.getElementById("blocked").textContent = s.blocked_agents ?? 0;
+  document.getElementById("uptime").textContent = (s.uptime_seconds ?? 0) + "s";
+  drawSparkline(s.token_series);
+  renderTriggers(s.recent_triggers);
+}
+
+tick();
+setInterval(tick, POLL_MS);
+</script>
+</body>
+</html>

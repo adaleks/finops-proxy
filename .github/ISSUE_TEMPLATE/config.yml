@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❓ Question / discussion
+    url: https://github.com/adaleks/finops-proxy/discussions
+    about: Ask usage questions here before opening an issue.
+  - name: 🏢 Enterprise edition (finops-proxy-ee)
+    url: https://github.com/adaleks
+    about: SSO, multi-tenant hierarchy, Slack/Teams alerts, PG/ClickHouse — EE only.

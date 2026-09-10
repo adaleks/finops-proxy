@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "currency": "USD",
+  "per_million_tokens": true,
+  "estimation": { "assumed_completion_tokens": 0, "prompt_estimation_chars_per_token": 4.0 },
+  "default": { "input_usd_per_1m": 2.50, "output_usd_per_1m": 10.00 },
+  "models": {
+    "deepseek-chat":      { "input_usd_per_1m": 0.27, "output_usd_per_1m": 1.10  },
+    "deepseek-reasoner":  { "input_usd_per_1m": 0.55, "output_usd_per_1m": 2.19  },
+    "claude-haiku-4-5":   { "input_usd_per_1m": 1.00, "output_usd_per_1m": 5.00  },
+    "claude-sonnet-4-5":  { "input_usd_per_1m": 3.00, "output_usd_per_1m": 15.00 },
+    "claude-opus-4-5":    { "input_usd_per_1m": 5.00, "output_usd_per_1m": 25.00 },
+    "gpt-4o":             { "input_usd_per_1m": 2.50, "output_usd_per_1m": 10.00 },
+    "gpt-4o-mini":        { "input_usd_per_1m": 0.15, "output_usd_per_1m": 0.60  },
+    "o1":                 { "input_usd_per_1m": 15.00, "output_usd_per_1m": 60.00 }
+  }
+}

@@ -1,0 +1,4 @@
+[
+  {"key": "sk-loop",   "id": "looper", "name": "Looper", "monthly_budget_micro": 0,      "daily_budget_micro": 0},
+  {"key": "sk-budget", "id": "team-a", "name": "Team A", "monthly_budget_micro": 100000, "daily_budget_micro": 1}
+]

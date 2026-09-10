@@ -1,0 +1,86 @@
+# finops-proxy — open-source core, single-host quickstart.
+#
+#   docker compose up --build
+#
+# Brings up the circuit-breaker proxy on :8080 in front of a dev-only mock LLM
+# upstream on :8081. Fully offline — no SaaS, no network. Loop detection (exact
+# + dynamic) and per-key budgets are enabled via the mounted keys.example.json
+# (sk-loop = unlimited, sk-budget = tiny budget); requests need X-FinOps-API-Key.
+
+name: finops-proxy
+
+services:
+  # Dev-only mock LLM upstream. Swap this service (or the proxy's FINOPS_UPSTREAM
+  # below) for a real Ollama/OpenAI/Anthropic/DeepSeek endpoint to go to prod.
+  mockserver:
+    build: .
+    image: finops-proxy:latest
+    entrypoint: ["/out/mockserver"]
+    command: ["-addr", ":8081"]
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+
+  proxy:
+    build: .
+    image: finops-proxy:latest
+    depends_on:
+      mockserver:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: UTC
+    # CLI flags are read by the binary (they are not env vars). ${VAR:-default}
+    # is interpolated by docker compose from the shell / a local .env.
+    command:
+      - "-addr"
+      - "${FINOPS_ADDR:-:8080}"
+      - "-upstream"
+      - "${FINOPS_UPSTREAM:-http://mockserver:8081}"
+      - "-ttl"
+      - "${FINOPS_TTL:-5m}"
+      - "-limit"
+      - "${FINOPS_LIMIT:-2}"
+      # Dynamic loop detection (structural + tool-cycle + velocity). Boolean flag,
+      # so it must be a single -flag=value arg (not "-dynamic true").
+      - "-dynamic=${FINOPS_DYNAMIC:-true}"
+      - "-pricing"
+      - "${FINOPS_PRICING_PATH:-/app/config/pricing.json}"
+      # Empty string = static-only pricing (no network catalog fetch).
+      - "-pricing-url"
+      - "${FINOPS_PRICING_URL:-}"
+      # Empty string = in-memory store. Set to /data/finops.db for persistence
+      # and mount a volume at /data.
+      - "-db"
+      - "${FINOPS_DB_PATH:-}"
+      # Per-key budgets + auth, seeded from the mounted keys.example.json.
+      # Set to "" for auth disabled (fail-open).
+      - "-keys"
+      - "${FINOPS_KEYS_PATH:-/app/config/keys.json}"
+      # Global daily budget (advisory budget_level alerts). 0 = disabled.
+      - "-daily-budget-micro"
+      - "${FINOPS_DAILY_BUDGET_MICRO:-0}"
+      - "-budget-thresholds"
+      - "${FINOPS_BUDGET_THRESHOLDS:-50,80,100}"
+    volumes:
+      # - finops-data:/data          # uncomment with -db /data/finops.db
+      - ./config/pricing.json:/app/config/pricing.json:ro
+      - ./keys.example.json:/app/config/keys.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    read_only: true
+
+# volumes:
+#   finops-data:

@@ -1,0 +1,55 @@
+# --- Binaries / build output ---
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# --- Go ---
+# Test binary, coverage, and profiling output
+*.test
+*.out
+coverage.out
+coverage.html
+*.prof
+cpu.prof
+mem.prof
+
+# Go workspace files (created by `go work`)
+go.work
+go.work.sum
+
+# --- Runtime data ---
+# SQLite / local databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+/data/
+
+# --- Secrets ---
+# Local keys file (copy keys.example.json -> keys.json for real keys)
+keys.json
+.env
+.env.*
+!.env.example
+
+# --- Claude Code (personal settings only; shared agents/skills are committed) ---
+.claude/settings.local.json
+
+# --- Editor / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log

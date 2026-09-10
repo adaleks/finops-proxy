@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # The exported pkg/ core is stdlib-only; these updates cover the optional
+  # SQLite store (gorm + pure-Go driver) and the Go toolchain deps. The
+  # check-modules.sh gate flags any module outside the vetted allowlist for review.
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
