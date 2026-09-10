@@ -65,9 +65,10 @@ pull requests.
 Tags follow [Semantic Versioning](https://semver.org) with a `v` prefix
 (`v0.1.0`, `v0.2.0`, …). Before 1.0, minor bumps may include breaking changes.
 
-`CHANGELOG.md` is a curated summary (optional): update it whenever you want a
-hand-written changelog — the auto-generated release notes and the Releases page
-already serve as the changelog otherwise.
+`CHANGELOG.md` is regenerated automatically from commit messages by git-cliff
+(`cliff.toml` + `.github/workflows/changelog.yml`) each time a `v*` tag is pushed.
+Use conventional commit prefixes (`feat:`, `fix:`, `docs:`, `ci:`, …) so the
+entries are grouped meaningfully.
 
 ## License
 
