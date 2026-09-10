@@ -1,0 +1,32 @@
+# golangci-lint configuration for finops-proxy.
+# Run locally with:  golangci-lint run ./...
+#
+# errcheck stays enabled (unchecked errors are a real bug class), but we exclude
+# the "best-effort" patterns where the error genuinely cannot be acted on:
+# writes to stdout / an HTTP response writer, Close() of a body/handle, and JSON
+# encoding into a response. Test files get a pass on unchecked helper writes.
+
+version: "2"
+
+run:
+  timeout: 3m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+
+  settings:
+    errcheck:
+      check-type-assertions: false
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - io.WriteString
+        - (io.Closer).Close
+        - (io.ReadCloser).Close
+        - (net/http.ResponseWriter).Write
+        - (*encoding/json.Encoder).Encode
+        - (*github.com/adaleks/finops-proxy/internal/store/sqlite.DB).Close

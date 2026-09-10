@@ -33,8 +33,8 @@ func TestLineTeePassthroughAndFire(t *testing.T) {
 	tee := newLineTee(&dst, "agent_loop_exception", fire)
 
 	// Split the marker across two writes to exercise the sliding window.
-	tee.Write([]byte("prefix agent_loop_"))
-	tee.Write([]byte("exception suffix\n"))
+	_, _ = tee.Write([]byte("prefix agent_loop_"))
+	_, _ = tee.Write([]byte("exception suffix\n"))
 
 	if got := dst.String(); got != "prefix agent_loop_exception suffix\n" {
 		t.Fatalf("passthrough = %q", got)
@@ -44,7 +44,7 @@ func TestLineTeePassthroughAndFire(t *testing.T) {
 	}
 
 	// fire must be idempotent even if a second write matches.
-	tee.Write([]byte("another agent_loop_exception\n"))
+	_, _ = tee.Write([]byte("another agent_loop_exception\n"))
 	if count != 1 {
 		t.Fatalf("fire count = %d, want 1 (idempotent)", count)
 	}
